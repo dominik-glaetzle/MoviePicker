@@ -4,6 +4,8 @@ import Search from './components/Search.jsx';
 import Spinner from './components/Spinner.jsx';
 import MovieCard from './components/MovieCard.jsx';
 import { getTrendingMovies, updateSearchCount } from './appwrite.js';
+import SkeletionLoader from './components/TrendingLoader.jsx';
+import MovieLoader from './components/MovieLoader.jsx';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -24,11 +26,12 @@ function App() {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
     const [movies, setMovies] = useState([]);
-    const [allErrorMessage, setAllErrorMessage] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [movieError, setMovieError] = useState('');
+    const [moviesLoading, setMoviesLoading] = useState(true);
 
     const [trendingMovies, setTrendingMovies] = useState([]);
-    const [errorMessage, setErrorMessage] = useState('');
+    const [trendingError, setTrendingError] = useState('');
+    const [trendingLoading, setTrendingLoading] = useState(false);
 
     // Debounce the search term so we don't make a request for every keystroke
     useDebounce(() => setDebouncedSearchTerm(searchTerm), 500, [searchTerm]);
@@ -39,8 +42,8 @@ function App() {
      * @returns {Promise<void>}
      */
     const fetchMovies = async (query = '') => {
-        setIsLoading(true);
-        setAllErrorMessage('');
+        setMoviesLoading(true);
+        setMovieError('');
         try {
             const endpoint = query
                 ? `${API_BASE_URL}/search/movie?query=${encodeURIComponent(query)}`
@@ -53,7 +56,7 @@ function App() {
             const data = await response.json();
 
             if (data.Response === 'False') {
-                allErrorMessage(data.Error || 'Failed to fetch movies');
+                movieError(data.Error || 'Failed to fetch movies');
                 setMovies([]);
                 return;
             }
@@ -63,9 +66,9 @@ function App() {
             }
         } catch (error) {
             console.error(`Error fetching movies: ${error}`);
-            setAllErrorMessage('Error fetching movies. Please try again later.');
+            setMovieError('Error fetching movies. Please try again later.');
         } finally {
-            setIsLoading(false);
+            setMoviesLoading(true);
         }
     };
     useEffect(() => {
@@ -78,14 +81,15 @@ function App() {
 
     const loadTrendingMovies = async () => {
         try {
-            setIsLoading(true);
+            setTrendingLoading(true);
+            setTrendingError('');
             const movies = await getTrendingMovies();
             setTrendingMovies(movies);
         } catch (error) {
             console.error(`Error fetching trending movies: ${error}`);
-            setErrorMessage('Error fetching trending movies. Please try again later.');
+            setTrendingError('Error fetching trending movies. Please try again later.');
         } finally {
-            setIsLoading(false);
+            setTrendingLoading(false);
         }
     };
 
@@ -103,10 +107,10 @@ function App() {
                     <Search searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
                 </header>
 
-                {isLoading ? (
-                    <Spinner />
-                ) : errorMessage ? (
-                    <p className="text-red-500">{errorMessage}</p>
+                {trendingLoading ? (
+                    <SkeletionLoader />
+                ) : trendingError ? (
+                    <p className="text-red-500">{trendingError}</p>
                 ) : (
                     trendingMovies.length > 0 && (
                         <section className="trending">
@@ -123,14 +127,18 @@ function App() {
                     )
                 )}
 
-                <section className={'all-movies'}>
+                <section className="all-movies">
                     <h2>All Movies</h2>
-                    {isLoading ? (
-                        <Spinner />
-                    ) : allErrorMessage ? (
-                        <p className={'text-red-500'}>{errorMessage}</p>
+                    {moviesLoading ? (
+                        <div className="flex flex-wrap gap-4">
+                            {Array.from({ length: 4 }).map((_, index) => (
+                                <MovieLoader key={index} />
+                            ))}
+                        </div>
+                    ) : movieError ? (
+                        <p className="text-red-500">{movieError}</p>
                     ) : (
-                        <ul>
+                        <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                             {movies.map((movie) => (
                                 <MovieCard key={movie.id} movie={movie} />
                             ))}
