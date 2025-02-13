@@ -4,7 +4,7 @@ import Search from './components/Search.jsx';
 import Spinner from './components/Spinner.jsx';
 import MovieCard from './components/MovieCard.jsx';
 import { getTrendingMovies, updateSearchCount } from './appwrite.js';
-import SkeletionLoader from './components/TrendingLoader.jsx';
+import TrendingLoader from './components/TrendingLoader.jsx';
 import MovieLoader from './components/MovieLoader.jsx';
 
 const API_BASE_URL = 'https://api.themoviedb.org/3';
@@ -27,7 +27,7 @@ function App() {
 
     const [movies, setMovies] = useState([]);
     const [movieError, setMovieError] = useState('');
-    const [moviesLoading, setMoviesLoading] = useState(true);
+    const [moviesLoading, setMoviesLoading] = useState(false);
 
     const [trendingMovies, setTrendingMovies] = useState([]);
     const [trendingError, setTrendingError] = useState('');
@@ -68,7 +68,7 @@ function App() {
             console.error(`Error fetching movies: ${error}`);
             setMovieError('Error fetching movies. Please try again later.');
         } finally {
-            setMoviesLoading(true);
+            setMoviesLoading(false);
         }
     };
     useEffect(() => {
@@ -108,7 +108,7 @@ function App() {
                 </header>
 
                 {trendingLoading ? (
-                    <SkeletionLoader />
+                    <TrendingLoader />
                 ) : trendingError ? (
                     <p className="text-red-500">{trendingError}</p>
                 ) : (
